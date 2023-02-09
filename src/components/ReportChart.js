@@ -4,12 +4,14 @@ import dynamic from 'next/dynamic'
 
 export default function ReportChart({ data, report }) {
   const [period, setPeriod] = useState([])
+  const [entries, setEntries] = useState([])
   const [series, setSeries] = useState([])
+  const [loading, setLoading] = useState(false)
 
   const Chart = dynamic(() => import('react-apexcharts'), { ssr: false })
 
   // create a function that takes status string and return integer 0, 1, 2
-  // example: "Absent" => 0, "LATE" => 1, "INSUFFICIENT" => 2
+  // example: "Absent" => 0, "LATE" => 1, "INSUFFICIENT" => 2, "EARLY OUT" => 4
   const getStatus = (status) => {
     if (status === 'ABS') {
       return 0
@@ -17,15 +19,21 @@ export default function ReportChart({ data, report }) {
       return 1
     } else if (status === 'INSUFFICIENT') {
       return 2
+    } else if (status === 'EARLY OUT') {
+      return 4
     }
   }
 
+  // a function that take a date object formatted in ""
+
   // create a function that initialize seires of heatmap data from data where each object contain a key "name" that is the employee name and "data" that contains an array of objects with key "x" that is the date object {Fri Sep 01 2023 00:00:00 GMT+0800 (Malaysia Time) {}} converted to "dd" in string and "y" that is the status
-  const initializeSeries = () => {
+  const initializeEntries = () => {
     var temp = data.map((employee) => {
       const employeeName = employee.employeeName
       const employeeData = employee.entries.map((entry) => {
+        //convert date from "dd/mm/yyyy" to "dd"
         const date = moment(entry.date).format('DD')
+
         const status = getStatus(entry.status)
         return {
           x: date,
@@ -37,7 +45,7 @@ export default function ReportChart({ data, report }) {
         data: employeeData,
       }
     })
-    setSeries(temp)
+    setEntries(temp)
   }
 
   const options = {
@@ -76,6 +84,12 @@ export default function ReportChart({ data, report }) {
               name: 'PRESENT',
               color: '#00FF00',
             },
+            {
+              from: 4,
+              to: 4,
+              name: 'EARLY OUT',
+              color: '#FFFF00',
+            },
           ],
         },
       },
@@ -89,15 +103,17 @@ export default function ReportChart({ data, report }) {
     },
   }
 
-  // create function that loops series and make sure each entry.data contains all dates in period, if not, add it with status 3
-  function fillPresent() {
-    const temp = series.map((employee) => {
-      const employeeName = employee.name
+  // create function that takes series and fill absent dates up till end of period with status 3
+  // example: [{name: "employee1", data: [{x: "09", y: 0}, {x: "14", y: 1}, {x: "27", y: 2}]}] => [{name: "employee1", data: [{x: "09", y: 0}, {x: "10", y: 3}, {x: "11", y: 3}, {x: "12", y: 3}, {x: "13", y: 3}, {x: "14", y: 1}, {x: "15", y: 3}, {x: "16", y: 3}, {x: "17", y: 3}, {x: "18", y: 3}, {x: "19", y: 3}, {x: "20", y: 3}, {x: "21", y: 3}, {x: "22", y: 3}, {x: "23", y: 3}, {x: "24", y: 3}, {x: "25", y: 3}, {x: "26", y: 3}, {x: "27", y: 2}, {x: "28", y: 3}, {x: "29", y: 3}, {x: "30", y: 3}, {x: "31", y: 3}]}]
+  const fillPresent = () => {
+    const temp = entries.map((employee) => {
       const employeeData = employee.data
+      const employeeName = employee.name
       const tempData = []
-      period.forEach((date) => {
-        // check if employeeData contains date
+      for (let i = 0; i < period.length; i++) {
+        const date = period[i]
         const found = employeeData.find((element) => element.x === date)
+        console.log(found)
         if (found) {
           tempData.push(found)
         } else {
@@ -106,13 +122,14 @@ export default function ReportChart({ data, report }) {
             y: 3,
           })
         }
-      })
+      }
       return {
         name: employeeName,
         data: tempData,
       }
     })
-    return temp
+    setSeries(temp)
+    setLoading(false)
   }
 
   //create function that takes report.period, "09-01-2023 To 31-01-2023" split by "To" then read first two string of split array and return
@@ -128,33 +145,41 @@ export default function ReportChart({ data, report }) {
       dateArray.push(currentDate.format('DD'))
       currentDate.add(1, 'days')
     }
-    console.log(dateArray)
     return dateArray
   }
 
   // useeffect to init getDates() and set it to period
   useEffect(() => {
+    setLoading(true)
     setPeriod(getDates())
-    initializeSeries()
+    initializeEntries()
   }, [])
 
   // useeffect to fill absent after period is set
   useEffect(() => {
-    if (period.length > 0 && series.length > 0) {
-      setSeries(fillPresent())
+    if (entries.length > 0) {
+      fillPresent()
     }
-  }, [period])
+  }, [entries])
 
   return (
     <div>
       <h1>Report Chart</h1>
-      <Chart
-        options={options}
-        series={series}
-        type='heatmap'
-        height={1000}
-        width={800}
-      />
+      {loading ? (
+        <div>Loading</div>
+      ) : series.length > 0 ? (
+        <div>
+          <Chart
+            options={options}
+            series={series}
+            type='heatmap'
+            width={500}
+            height={1000}
+          />
+        </div>
+      ) : (
+        <div>no data</div>
+      )}
     </div>
   )
 }

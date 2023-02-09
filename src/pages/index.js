@@ -18,7 +18,7 @@ export default function Home() {
   const [employeeArray, setEmployeeArray] = useState([]) // array of employees
   const [loading, setLoading] = useState(false)
 
-  // read the uploaded file into rawList using xlsx library without headers with cellDates set to true
+  // read the uploaded file into rawList using xlsx library without headers with dates
   const readFile = () => {
     const fileReader = new FileReader()
     fileReader.readAsArrayBuffer(selectedFile)
@@ -27,11 +27,11 @@ export default function Home() {
       const wb = read(bufferArray, {
         type: 'binary',
         cellDates: true,
-        dateNF: 'dd/mm/yyyy',
+        dateNF: 'd/m/yyyy',
       })
       const wsname = wb.SheetNames[0]
       const ws = wb.Sheets[wsname]
-      const data = utils.sheet_to_json(ws, { header: 1 })
+      const data = utils.sheet_to_json(ws, { header: 1, raw: false })
       setRawList(data)
     }
   }
@@ -47,6 +47,7 @@ export default function Home() {
       }
       setReport(newReport)
     }
+    console.log(report)
   }
 
   // loop rawList and group by every entry at index 18 (employee name), then push into employeeArray
