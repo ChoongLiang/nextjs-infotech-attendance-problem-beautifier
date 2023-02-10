@@ -31,9 +31,8 @@ export default function ReportChart({ data, report }) {
     var temp = data.map((employee) => {
       const employeeName = employee.employeeName
       const employeeData = employee.entries.map((entry) => {
-        //convert date from "dd/mm/yyyy" to "dd"
-        const date = moment(entry.date).format('DD')
-
+        // split using "/" and take the first item as date
+        const date = entry.date.split('-')[0]
         const status = getStatus(entry.status)
         return {
           x: date,
@@ -112,8 +111,8 @@ export default function ReportChart({ data, report }) {
       const tempData = []
       for (let i = 0; i < period.length; i++) {
         const date = period[i]
-        const found = employeeData.find((element) => element.x === date)
-        console.log(found)
+        const found = employeeData.find((element) => element.x == Number(date))
+        debugger
         if (found) {
           tempData.push(found)
         } else {
@@ -173,7 +172,7 @@ export default function ReportChart({ data, report }) {
             options={options}
             series={series}
             type='heatmap'
-            width={500}
+            width={800}
             height={1000}
           />
         </div>

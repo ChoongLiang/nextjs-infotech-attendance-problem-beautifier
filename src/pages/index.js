@@ -2,7 +2,7 @@ import Head from 'next/head'
 import styles from '../../styles/Home.module.css'
 import React, { useState, useEffect } from 'react'
 
-import { read, utils } from 'xlsx'
+import { read, utils, readFile } from 'xlsx'
 
 import ReportChart from '../components/ReportChart'
 
@@ -18,8 +18,21 @@ export default function Home() {
   const [employeeArray, setEmployeeArray] = useState([]) // array of employees
   const [loading, setLoading] = useState(false)
 
+  const processFile2 = async () => {
+    const f = await selectedFile.arrayBuffer()
+    const wb = read(f, {
+      type: 'string',
+      raw: true,
+    }) // parse the array buffer
+    const ws = wb.Sheets[wb.SheetNames[0]] // get the first worksheet
+    const data = utils.sheet_to_json(ws, {
+      header: 1,
+    }) // generate objects
+    setRawList(data)
+  }
+
   // read the uploaded file into rawList using xlsx library without headers with dates
-  const readFile = () => {
+  const processFile = () => {
     const fileReader = new FileReader()
     fileReader.readAsArrayBuffer(selectedFile)
     fileReader.onload = (e) => {
@@ -27,7 +40,6 @@ export default function Home() {
       const wb = read(bufferArray, {
         type: 'binary',
         cellDates: true,
-        dateNF: 'd/m/yyyy',
       })
       const wsname = wb.SheetNames[0]
       const ws = wb.Sheets[wsname]
@@ -47,7 +59,6 @@ export default function Home() {
       }
       setReport(newReport)
     }
-    console.log(report)
   }
 
   // loop rawList and group by every entry at index 18 (employee name), then push into employeeArray
@@ -90,15 +101,15 @@ export default function Home() {
       })
       tempArray.push(tempEmployee)
     })
-    console.log(tempArray)
     setEmployeeArray(tempArray)
+    debugger
   }
 
   // read the file when selectedFile changes
   useEffect(() => {
     if (selectedFile) {
       setLoading(true)
-      readFile()
+      processFile2()
     }
   }, [selectedFile])
 
