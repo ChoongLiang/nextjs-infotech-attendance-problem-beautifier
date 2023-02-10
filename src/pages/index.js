@@ -2,7 +2,7 @@ import Head from 'next/head'
 import styles from '../../styles/Home.module.css'
 import React, { useState, useEffect } from 'react'
 
-import { read, utils, readFile } from 'xlsx'
+import { read, utils } from 'xlsx'
 
 import ReportChart from '../components/ReportChart'
 
@@ -139,7 +139,7 @@ export default function Home() {
         <h1 className={styles.title}>
           Welcome to{' '}
           <a href='https://nextjs.org'>
-            InfoTech Attendance Problem Beautifier!
+            InfoTech Attendance Problem Beautifier V2!
           </a>
         </h1>
         <p className={styles.description}>
@@ -165,7 +165,7 @@ export default function Home() {
 
       <footer className={styles.footer}>
         <a href='https://next.new' target='_blank' rel='noopener noreferrer'>
-          Created with&nbsp;<b>next.new</b>&nbsp;⚡️ by Thomas Tan 2023
+          Last Updated Feb 10 2023 ⚡️ by Thomas Tan
         </a>
       </footer>
     </div>
